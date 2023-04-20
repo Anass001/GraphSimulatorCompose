@@ -6,10 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
@@ -23,9 +21,13 @@ fun Node(value: Int, nodeColor: Color, position: Offset = Offset.Zero) {
         )
         drawIntoCanvas { canvas ->
             val textPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.BLUE
+                color = android.graphics.Color.WHITE
                 textAlign = android.graphics.Paint.Align.CENTER
                 textSize = 50f
+                typeface = android.graphics.Typeface.create(
+                    android.graphics.Typeface.DEFAULT,
+                    android.graphics.Typeface.BOLD
+                )
             }
             canvas.nativeCanvas.drawText(
                 value.toString(),
