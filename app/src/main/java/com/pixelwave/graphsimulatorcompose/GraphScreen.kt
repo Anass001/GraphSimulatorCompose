@@ -62,6 +62,14 @@ fun GraphScreen(viewModel: GraphViewModel = GraphViewModel()) {
             ) {
                 Text(text = "DFS")
             }
+            Button(
+                onClick = { viewModel.clearGraph() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF44336)
+                )
+            ) {
+                Text(text = "Clear")
+            }
         }
         Graph(
             modifier = Modifier.fillMaxSize(),
@@ -74,6 +82,9 @@ fun GraphScreen(viewModel: GraphViewModel = GraphViewModel()) {
             },
             onAlgorithmFinished = {
                 viewModel.clearAlgorithm()
+            },
+            onNodeVisited = { nodeId ->
+                viewModel.addVisitedNode(nodeId)
             }
         )
     }

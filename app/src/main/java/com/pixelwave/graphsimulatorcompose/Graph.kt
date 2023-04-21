@@ -1,6 +1,5 @@
 package com.pixelwave.graphsimulatorcompose
 
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -23,19 +22,6 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
-fun extractAdjacencyList(lines: List<Line>): Map<Int, List<Int>> {
-    val adjacencyList = mutableMapOf<Int, MutableList<Int>>()
-    for (line in lines) {
-        val startNode = line.startNode
-        val endNode = line.endNode
-
-        adjacencyList.getOrPut(startNode) { mutableListOf() }.add(endNode)
-        adjacencyList.getOrPut(endNode) { mutableListOf() }.add(startNode)
-    }
-    return adjacencyList
-}
-
 @Composable
 fun Graph(
     modifier: Modifier = Modifier,
@@ -43,9 +29,10 @@ fun Graph(
     onNodeAdded: (Offset) -> Unit,
     onLineAdded: (Line) -> Unit,
     onAlgorithmFinished: () -> Unit,
+    onNodeVisited: (Int) -> Unit
 ) {
-    Log.i("Graph", "Graph Composable called")
     val selectedNodes = remember { mutableStateListOf<Int>() }
+
     val graphState = remember { mutableStateOf(GraphState()) }
     graphState.value = state
 
@@ -59,13 +46,13 @@ fun Graph(
             .pointerInput(Unit) {
                 detectTapGestures { tapOffset ->
                     if (!graphState.value.canAddNodes) {
-                        val node = graphState.value.nodeInfos.find { node ->
+                        val node = graphState.value.nodeInfo.find { node ->
                             node.position.x.toDp() - 25.dp <= tapOffset.x.toDp() && tapOffset.x.toDp() <= node.position.x.toDp() + 25.dp &&
                                     node.position.y.toDp() - 25.dp <= tapOffset.y.toDp() && tapOffset.y.toDp() <= node.position.y.toDp() + 25.dp
                         }
                         if (node != null) {
                             if (selectedNodes.size < 2) {
-                                val nodeId = graphState.value.nodeInfos.indexOf(node) + 1
+                                val nodeId = graphState.value.nodeInfo.indexOf(node) + 1
                                 if (!selectedNodes.contains(nodeId)) {
                                     selectedNodes.add(nodeId)
                                 }
@@ -92,7 +79,10 @@ fun Graph(
                 }
             }
     ) {
-        graphState.value.nodeInfos.forEachIndexed { index, node ->
+        Text(
+            text = "Visited Nodes: ${graphState.value.visitedNodes.size}"
+        )
+        graphState.value.nodeInfo.forEachIndexed { index, node ->
             Node(
                 value = index + 1,
                 nodeColor = if (selectedNodes.contains(index + 1)) MaterialTheme.colorScheme.secondary else node.color,
@@ -107,8 +97,8 @@ fun Graph(
         Canvas(modifier = Modifier.fillMaxSize()) {
             graphState.value.lines.forEach { line ->
                 val startNode =
-                    graphState.value.nodeInfos[line.startNode - 1].position
-                val endNode = graphState.value.nodeInfos[line.endNode - 1].position
+                    graphState.value.nodeInfo[line.startNode - 1].position
+                val endNode = graphState.value.nodeInfo[line.endNode - 1].position
                 drawLineBetweenNodes(startNode, endNode, Color(0xFF36dfb4), 10f)
             }
         }
@@ -116,26 +106,23 @@ fun Graph(
         when (graphState.value.activeAlgorithm) {
             Algorithm.Bfs -> {
                 val coroutineScope = rememberCoroutineScope()
-
+                selectedNodes.clear()
                 LaunchedEffect(Unit) {
 
-                    // run bfs algorithm here and update the visited nodes with animation
-
                     val adjacencyList = extractAdjacencyList(graphState.value.lines)
-                    val visitedNodes = mutableStateListOf<Int>()
+                    val visitedNodes = graphState.value.visitedNodes
                     val queue = mutableListOf<Int>()
-                    val startNode = selectedNodes[0]
+                    val startNode = 1
                     queue.add(startNode)
                     while (queue.isNotEmpty()) {
 
                         val currentNode = queue.removeFirst()
 
                         coroutineScope.launch {
-                            graphState.value.nodeInfos[currentNode - 1] =
-                                graphState.value.nodeInfos[currentNode - 1].copy(
+                            graphState.value.nodeInfo[currentNode - 1] =
+                                graphState.value.nodeInfo[currentNode - 1].copy(
                                     color = Color.Red
                                 )
-                            title.value = title.value.plus(" ")
                         }
 
                         if (!visitedNodes.contains(currentNode)) {
@@ -146,19 +133,62 @@ fun Graph(
                                     queue.add(neighbour)
                                 }
                             }
+                            graphState.value = graphState.value.copy(
+                                visitedNodes = visitedNodes,
+                                canAddNodes = false
+                            )
                         }
-                        delay(1000)
+                        delay(500)
                     }
-                    graphState.value = graphState.value.copy(
-                        visitedNodes = visitedNodes,
-                        canAddNodes = false
-                    )
+
+                    title.value = title.value.plus(" ")
                 }
-//                onAlgorithmFinished()
+            }
+
+            Algorithm.Dfs -> {
+                val coroutineScope = rememberCoroutineScope()
+                selectedNodes.clear()
+                LaunchedEffect(Unit) {
+                    val adjacencyList = extractAdjacencyList(graphState.value.lines)
+                    val stack = mutableListOf<Int>()
+                    val startNode = 1
+                    stack.add(startNode)
+                    while (stack.isNotEmpty()) {
+
+                        val currentNode = stack.removeLast()
+
+                        coroutineScope.launch {
+                            graphState.value.nodeInfo[currentNode - 1] =
+                                graphState.value.nodeInfo[currentNode - 1].copy(
+                                    color = Color.Red
+                                )
+                        }
+
+                        if (!graphState.value.visitedNodes.contains(currentNode)) {
+                            title.value = title.value.plus(" ")
+                            onNodeVisited(currentNode)
+                            val neighbours = adjacencyList[currentNode]
+                            if (neighbours != null) {
+                                for (neighbour in neighbours) {
+                                    stack.add(neighbour)
+                                }
+                            }
+                            graphState.value = graphState.value.copy(
+                                visitedNodes = graphState.value.visitedNodes,
+                                canAddNodes = false
+                            )
+                        }
+                        delay(500)
+                    }
+                }
             }
 
             else -> {
             }
+        }
+
+        if (graphState.value.visitedNodes.size == graphState.value.nodeInfo.size) {
+            onAlgorithmFinished()
         }
     }
 }
