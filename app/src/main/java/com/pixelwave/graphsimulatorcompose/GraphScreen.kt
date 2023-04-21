@@ -41,7 +41,7 @@ fun GraphScreen(viewModel: GraphViewModel = GraphViewModel()) {
             Button(
                 onClick = { viewModel.runAlgorithm(Algorithm.Bfs) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (graphState.activeAlgorithm == Algorithm.Bfs) Color(
+                    containerColor = if (graphState.activeAlgorithm is Algorithm.Bfs) Color(
                         0xFF36dfb4
                     ) else Color(
                         0xFF6650a4
@@ -53,7 +53,7 @@ fun GraphScreen(viewModel: GraphViewModel = GraphViewModel()) {
             Button(
                 onClick = { viewModel.runAlgorithm(Algorithm.Dfs) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (graphState.activeAlgorithm == Algorithm.Dfs) Color(
+                    containerColor = if (graphState.activeAlgorithm is Algorithm.Dfs) Color(
                         0xFF36dfb4
                     ) else Color(
                         0xFF6650a4
@@ -65,7 +65,16 @@ fun GraphScreen(viewModel: GraphViewModel = GraphViewModel()) {
         }
         Graph(
             modifier = Modifier.fillMaxSize(),
-            state = graphState
+            state = graphState,
+            onNodeAdded = { offset ->
+                viewModel.addNode(offset)
+            },
+            onLineAdded = { line ->
+                viewModel.addLine(line)
+            },
+            onAlgorithmFinished = {
+                viewModel.clearAlgorithm()
+            }
         )
     }
 }

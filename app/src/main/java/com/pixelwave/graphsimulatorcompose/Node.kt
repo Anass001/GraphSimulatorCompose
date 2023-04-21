@@ -12,7 +12,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Node(value: Int, nodeColor: Color, position: Offset = Offset.Zero) {
+fun Node(
+    value: Int,
+    nodeColor: Color,
+    position: Offset = Offset.Zero,
+    isHighlighted: Boolean = false
+) {
     Canvas(modifier = Modifier.size(50.dp)) {
         drawCircle(
             color = nodeColor,
