@@ -121,7 +121,7 @@ fun Graph(
                         coroutineScope.launch {
                             graphState.value.nodeInfo[currentNode - 1] =
                                 graphState.value.nodeInfo[currentNode - 1].copy(
-                                    color = Color.Red
+                                    color = Color(0xFF36dfb4)
                                 )
                         }
 
@@ -160,7 +160,7 @@ fun Graph(
                         coroutineScope.launch {
                             graphState.value.nodeInfo[currentNode - 1] =
                                 graphState.value.nodeInfo[currentNode - 1].copy(
-                                    color = Color.Red
+                                    color = Color(0xFF36dfb4)
                                 )
                         }
 

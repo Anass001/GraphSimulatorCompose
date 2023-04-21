@@ -13,6 +13,6 @@ data class GraphState(
     val visitedNodes: MutableList<Int> = mutableListOf(),
 )
 
-data class NodeInfo(val position: Offset, val color: Color = Color.Green)
+data class NodeInfo(val position: Offset, val color: Color = Color(0xFF6650a4))
 
 data class Line(val startNode: Int, val endNode: Int)

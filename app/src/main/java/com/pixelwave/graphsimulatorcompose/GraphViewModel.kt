@@ -22,7 +22,7 @@ class GraphViewModel : ViewModel() {
 
     fun addNode(position: Offset) {
         state =
-            state.copy(nodeInfo = state.nodeInfo.also { it.add(NodeInfo(position, Color.Black)) })
+            state.copy(nodeInfo = state.nodeInfo.also { it.add(NodeInfo(position = position)) })
     }
 
     fun addLine(line: Line) {
@@ -30,7 +30,7 @@ class GraphViewModel : ViewModel() {
     }
 
     fun clearAlgorithm() {
-        val nodes = state.nodeInfo.map { it.copy(color = Color.Black) }
+        val nodes = state.nodeInfo.map { it.copy(color = Color(0xFF6650a4)) }
         state = state.copy(
             activeAlgorithm = Algorithm.None,
             visitedNodes = mutableListOf(),
