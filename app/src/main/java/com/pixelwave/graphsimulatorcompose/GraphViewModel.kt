@@ -6,18 +6,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.delay
 
 class GraphViewModel : ViewModel() {
 
     var state by mutableStateOf(GraphState())
 
     fun toggleAddNodes() {
-        state = state.copy(canAddNodes = !(state.canAddNodes), activeAlgorithm = Algorithm.None)
+        state = state.copy(canAddNodes = !(state.canAddNodes))
     }
 
-    fun runAlgorithm(algorithm: Algorithm) {
-        state = state.copy(activeAlgorithm = algorithm, canAddNodes = false)
+    fun runAlgorithm() {
+        state = state.copy(algorithmRunning = true, canAddNodes = false)
+    }
+
+    fun selectAlgorithm(algorithm: Algorithm) {
+        state = state.copy(selectedAlgorithm = algorithm)
     }
 
     fun addNode(position: Offset) {
@@ -32,9 +35,9 @@ class GraphViewModel : ViewModel() {
     fun clearAlgorithm() {
         val nodes = state.nodeInfo.map { it.copy(color = Color(0xFF6650a4)) }
         state = state.copy(
-            activeAlgorithm = Algorithm.None,
             visitedNodes = mutableListOf(),
-            nodeInfo = nodes.toMutableList()
+            nodeInfo = nodes.toMutableList(),
+            algorithmRunning = false,
         )
     }
 
@@ -44,7 +47,7 @@ class GraphViewModel : ViewModel() {
             lines = mutableListOf(),
             adjacencyList = mapOf(),
             visitedNodes = mutableListOf(),
-            activeAlgorithm = Algorithm.None,
+            selectedAlgorithm = Algorithm.None,
             canAddNodes = true
         )
     }

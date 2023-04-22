@@ -5,10 +5,10 @@ import androidx.compose.ui.graphics.Color
 
 data class GraphState(
     val canAddNodes: Boolean = true,
-    val activeAlgorithm: Algorithm = Algorithm.None,
+    val selectedAlgorithm: Algorithm = Algorithm.None,
+    val algorithmRunning: Boolean = false,
     val nodeInfo: MutableList<NodeInfo> = mutableListOf(),
     val lines: MutableList<Line> = mutableListOf(),
-
     val adjacencyList: Map<Int, List<Int>> = mapOf(),
     val visitedNodes: MutableList<Int> = mutableListOf(),
 )
