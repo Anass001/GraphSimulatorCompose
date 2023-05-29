@@ -12,7 +12,6 @@ data class GraphState(
     val adjacencyList: Map<Int, List<Int>> = mapOf(),
     val visitedNodes: MutableList<Int> = mutableListOf(),
 )
-
 data class NodeInfo(val position: Offset, val color: Color = Color(0xFF6650a4))
 
-data class Line(val startNode: Int, val endNode: Int)
+data class Line(val startNode: Int, val endNode: Int, val weight: Int = 1)

@@ -1,6 +1,5 @@
 package com.pixelwave.graphsimulatorcompose
 
-import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -18,16 +17,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.PriorityQueue
-import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sqrt
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun Graph(
     modifier: Modifier = Modifier,
@@ -67,7 +71,17 @@ fun Graph(
                                 val startNode = selectedNodes[0]
                                 val endNode = selectedNodes[1]
                                 if (startNode != endNode) {
-                                    val line = Line(startNode, endNode)
+                                    val weight = floor(
+                                        sqrt(
+                                            (graphState.value.nodeInfo[startNode - 1].position.x - graphState.value.nodeInfo[endNode - 1].position.x).pow(
+                                                2
+                                            ) +
+                                                    (graphState.value.nodeInfo[startNode - 1].position.y - graphState.value.nodeInfo[endNode - 1].position.y).pow(
+                                                        2
+                                                    )
+                                        )
+                                    )
+                                    val line = Line(startNode, endNode, weight.toInt())
                                     if (!graphState.value.lines.contains(line)) {
                                         onLineAdded(line)
                                     }
@@ -80,6 +94,7 @@ fun Graph(
                     } else {
                         onNodeAdded(tapOffset)
                     }
+
                     // to force recomposition :) don't judge
                     title.value = title.value.plus(" ")
                 }
@@ -97,12 +112,28 @@ fun Graph(
             color = Color.White,
             fontSize = 5.sp,
         )
+        val textMeasurer = rememberTextMeasurer()
         Canvas(modifier = Modifier.fillMaxSize()) {
             graphState.value.lines.forEach { line ->
                 val startNode =
                     graphState.value.nodeInfo[line.startNode - 1].position
                 val endNode = graphState.value.nodeInfo[line.endNode - 1].position
                 drawLineBetweenNodes(startNode, endNode, Color(0xFF36dfb4), 10f)
+
+                val center = Offset(
+                    (startNode.x + endNode.x) / 2,
+                    (startNode.y + endNode.y) / 2
+                )
+                val angle = atan(
+                    (endNode.y - startNode.y) /
+                            (endNode.x - startNode.x)
+                )
+
+                val distance = 25
+                val x = center.x + distance * cos(angle)
+                val y = center.y + distance * sin(angle)
+                val offset = Offset(x.toFloat(), y.toFloat())
+                drawText(textMeasurer, "${line.weight}", topLeft = offset)
             }
         }
 
@@ -115,32 +146,26 @@ fun Graph(
 
                         val adjacencyList = extractAdjacencyList(graphState.value.lines)
                         val visitedNodes = graphState.value.visitedNodes
-                        val queue = mutableListOf<Int>()
+                        val queue = mutableListOf<Pair<Int, Int>>()
                         val startNode = 1
-                        queue.add(startNode)
+                        queue.add(Pair(startNode, 0))
                         while (queue.isNotEmpty()) {
 
                             val currentNode = queue.removeFirst()
 
                             coroutineScope.launch {
-                                graphState.value.nodeInfo[currentNode - 1] =
-                                    graphState.value.nodeInfo[currentNode - 1].copy(
+                                graphState.value.nodeInfo[currentNode.first - 1] =
+                                    graphState.value.nodeInfo[currentNode.first - 1].copy(
                                         color = Color(0xFF36dfb4)
                                     )
                             }
 
-                            if (!visitedNodes.contains(currentNode)) {
-                                visitedNodes.add(currentNode)
-                                val neighbours = adjacencyList[currentNode]
-                                if (neighbours != null) {
-                                    for (neighbour in neighbours) {
-                                        queue.add(neighbour)
-                                    }
+                            if (!visitedNodes.contains(currentNode.first)) {
+                                title.value = title.value.plus(" ")
+                                onNodeVisited(currentNode.first)
+                                adjacencyList[currentNode.first]?.forEach {
+                                    queue.add(Pair(it.first, currentNode.second + 1))
                                 }
-                                graphState.value = graphState.value.copy(
-                                    visitedNodes = visitedNodes,
-                                    canAddNodes = false
-                                )
                             }
                             delay(500)
                         }
@@ -153,37 +178,34 @@ fun Graph(
                     val coroutineScope = rememberCoroutineScope()
                     selectedNodes.clear()
                     LaunchedEffect(Unit) {
+
                         val adjacencyList = extractAdjacencyList(graphState.value.lines)
-                        val stack = mutableListOf<Int>()
+                        val visitedNodes = graphState.value.visitedNodes
+                        val stack = mutableListOf<Pair<Int, Int>>()
                         val startNode = 1
-                        stack.add(startNode)
+                        stack.add(Pair(startNode, 0))
                         while (stack.isNotEmpty()) {
 
                             val currentNode = stack.removeLast()
 
                             coroutineScope.launch {
-                                graphState.value.nodeInfo[currentNode - 1] =
-                                    graphState.value.nodeInfo[currentNode - 1].copy(
+                                graphState.value.nodeInfo[currentNode.first - 1] =
+                                    graphState.value.nodeInfo[currentNode.first - 1].copy(
                                         color = Color(0xFF36dfb4)
                                     )
                             }
 
-                            if (!graphState.value.visitedNodes.contains(currentNode)) {
+                            if (!visitedNodes.contains(currentNode.first)) {
                                 title.value = title.value.plus(" ")
-                                onNodeVisited(currentNode)
-                                val neighbours = adjacencyList[currentNode]
-                                if (neighbours != null) {
-                                    for (neighbour in neighbours) {
-                                        stack.add(neighbour)
-                                    }
+                                onNodeVisited(currentNode.first)
+                                adjacencyList[currentNode.first]?.forEach {
+                                    stack.add(Pair(it.first, currentNode.second + 1))
                                 }
-                                graphState.value = graphState.value.copy(
-                                    visitedNodes = graphState.value.visitedNodes,
-                                    canAddNodes = false
-                                )
                             }
                             delay(500)
                         }
+
+                        title.value = title.value.plus(" ")
                     }
                 }
 
@@ -191,63 +213,138 @@ fun Graph(
                     val coroutineScope = rememberCoroutineScope()
                     selectedNodes.clear()
                     LaunchedEffect(Unit) {
+
                         val adjacencyList = extractAdjacencyList(graphState.value.lines)
                         val visitedNodes = graphState.value.visitedNodes
-                        val distances = mutableMapOf<Int, Int>()
-                        val previousNodes = mutableMapOf<Int, Int>()
+                        val queue = mutableListOf<Pair<Int, Int>>()
                         val startNode = 1
-                        val endNode = graphState.value.nodeInfo.size
-                        for (node in graphState.value.nodeInfo) {
-//                            distances[node.value] = Int.MAX_VALUE
-                        }
-                        distances[startNode] = 0
-                        val queue = PriorityQueue<Int>(compareBy { distances[it] })
-                        queue.add(startNode)
+                        queue.add(Pair(startNode, 0))
                         while (queue.isNotEmpty()) {
-                            val currentNode = queue.remove()
-                            if (!visitedNodes.contains(currentNode)) {
-                                visitedNodes.add(currentNode)
-                                val neighbours = adjacencyList[currentNode]
-                                if (neighbours != null) {
-                                    for (neighbour in neighbours) {
-                                        val newDistance = distances[currentNode]!! + 1
-                                        if (newDistance < distances[neighbour]!!) {
-                                            distances[neighbour] = newDistance
-                                            previousNodes[neighbour] = currentNode
-                                            queue.add(neighbour)
-                                        }
-                                    }
+
+                            val currentNode = queue.removeFirst()
+
+                            coroutineScope.launch {
+                                graphState.value.nodeInfo[currentNode.first - 1] =
+                                    graphState.value.nodeInfo[currentNode.first - 1].copy(
+                                        color = Color(0xFF36dfb4)
+                                    )
+                            }
+
+                            if (!visitedNodes.contains(currentNode.first)) {
+                                title.value = title.value.plus(" ")
+                                onNodeVisited(currentNode.first)
+                                adjacencyList[currentNode.first]?.forEach {
+                                    queue.add(Pair(it.first, currentNode.second + 1))
                                 }
-                                graphState.value = graphState.value.copy(
-                                    visitedNodes = visitedNodes,
-                                    canAddNodes = false
-                                )
-                            }
-                            coroutineScope.launch {
-                                graphState.value.nodeInfo[currentNode - 1] =
-                                    graphState.value.nodeInfo[currentNode - 1].copy(
-                                        color = Color(0xFF36dfb4)
-                                    )
                             }
                             delay(500)
                         }
-                        var currentNode = endNode
-                        while (currentNode != startNode) {
+
+                        title.value = title.value.plus(" ")
+                    }
+                }
+
+                Algorithm.BellmanFord -> {
+                    val coroutineScope = rememberCoroutineScope()
+                    selectedNodes.clear()
+                    LaunchedEffect(Unit) {
+
+                        val adjacencyList = extractAdjacencyList(graphState.value.lines)
+                        val visitedNodes = graphState.value.visitedNodes
+                        val queue = mutableListOf<Pair<Int, Int>>()
+                        val startNode = 1
+                        queue.add(Pair(startNode, 0))
+                        while (queue.isNotEmpty()) {
+
+                            val currentNode = queue.removeFirst()
+
                             coroutineScope.launch {
-                                graphState.value.nodeInfo[currentNode - 1] =
-                                    graphState.value.nodeInfo[currentNode - 1].copy(
+                                graphState.value.nodeInfo[currentNode.first - 1] =
+                                    graphState.value.nodeInfo[currentNode.first - 1].copy(
                                         color = Color(0xFF36dfb4)
                                     )
                             }
-                            currentNode = previousNodes[currentNode]!!
+
+                            if (!visitedNodes.contains(currentNode.first)) {
+                                title.value = title.value.plus(" ")
+                                onNodeVisited(currentNode.first)
+                                adjacencyList[currentNode.first]?.forEach {
+                                    queue.add(Pair(it.first, currentNode.second + 1))
+                                }
+                            }
                             delay(500)
                         }
-                        coroutineScope.launch {
-                            graphState.value.nodeInfo[currentNode - 1] =
-                                graphState.value.nodeInfo[currentNode - 1].copy(
-                                    color = Color(0xFF36dfb4)
-                                )
+
+                        title.value = title.value.plus(" ")
+                    }
+                }
+
+                Algorithm.Kruskal -> {
+                    val coroutineScope = rememberCoroutineScope()
+                    selectedNodes.clear()
+                    LaunchedEffect(Unit) {
+
+                        val adjacencyList = extractAdjacencyList(graphState.value.lines)
+                        val visitedNodes = graphState.value.visitedNodes
+                        val queue = mutableListOf<Pair<Int, Int>>()
+                        val startNode = 1
+                        queue.add(Pair(startNode, 0))
+                        while (queue.isNotEmpty()) {
+
+                            val currentNode = queue.removeFirst()
+
+                            coroutineScope.launch {
+                                graphState.value.nodeInfo[currentNode.first - 1] =
+                                    graphState.value.nodeInfo[currentNode.first - 1].copy(
+                                        color = Color(0xFF36dfb4)
+                                    )
+                            }
+
+                            if (!visitedNodes.contains(currentNode.first)) {
+                                title.value = title.value.plus(" ")
+                                onNodeVisited(currentNode.first)
+                                adjacencyList[currentNode.first]?.forEach {
+                                    queue.add(Pair(it.first, currentNode.second + 1))
+                                }
+                            }
+                            delay(500)
                         }
+
+                        title.value = title.value.plus(" ")
+                    }
+                }
+
+                Algorithm.Prim -> {
+                    val coroutineScope = rememberCoroutineScope()
+                    selectedNodes.clear()
+                    LaunchedEffect(Unit) {
+
+                        val adjacencyList = extractAdjacencyList(graphState.value.lines)
+                        val visitedNodes = graphState.value.visitedNodes
+                        val queue = mutableListOf<Pair<Int, Int>>()
+                        val startNode = 1
+                        queue.add(Pair(startNode, 0))
+                        while (queue.isNotEmpty()) {
+
+                            val currentNode = queue.removeFirst()
+
+                            coroutineScope.launch {
+                                graphState.value.nodeInfo[currentNode.first - 1] =
+                                    graphState.value.nodeInfo[currentNode.first - 1].copy(
+                                        color = Color(0xFF36dfb4)
+                                    )
+                            }
+
+                            if (!visitedNodes.contains(currentNode.first)) {
+                                title.value = title.value.plus(" ")
+                                onNodeVisited(currentNode.first)
+                                adjacencyList[currentNode.first]?.forEach {
+                                    queue.add(Pair(it.first, currentNode.second + 1))
+                                }
+                            }
+                            delay(500)
+                        }
+
                         title.value = title.value.plus(" ")
                     }
                 }
@@ -301,8 +398,8 @@ fun DrawScope.drawLineBetweenNodes(start: Offset, end: Offset, color: Color, str
             angleSign(start, end)*(-10.dp.toPx() * sin(theta - 0.5f))
         )
     )
-    Log.i(
-        "DrawLine",
-        "start: $start, end: $end, theta: $theta, angleSign: ${angleSign(start, end)}"
-    )
+//    Log.i(
+//        "DrawLine",
+//        "start: $start, end: $end, theta: $theta, angleSign: ${angleSign(start, end)}"
+//    )
 }

@@ -140,7 +140,12 @@ fun GraphScreen(viewModel: GraphViewModel = GraphViewModel()) {
                 }
             }
             Button(
-                onClick = { viewModel.runAlgorithm() },
+                onClick = {
+                          if (!graphState.algorithmRunning)
+                              viewModel.runAlgorithm()
+                            else
+                                viewModel.clearAlgorithm()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (graphState.algorithmRunning) Color(
                         0xFF36dfb4
