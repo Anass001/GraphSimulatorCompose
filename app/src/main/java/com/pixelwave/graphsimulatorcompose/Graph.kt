@@ -264,22 +264,43 @@ fun Graph(
 }
 
 fun angleSign(start: Offset, end: Offset): Float {
-    return if (end.x < start.x && end.y < start.y) -1f else 1f
+    return if (end.x < start.x) -1f else 1f
 }
 
 fun DrawScope.drawLineBetweenNodes(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
     val theta = atan((end.y - start.y) / (end.x - start.x))
+    val linePointStart = start + Offset(
+        angleSign(start, end)*(25.dp.toPx() * cos(theta)),
+        angleSign(start, end)*(25.dp.toPx() * sin(theta))
+    )
+    val linePointEnd = end - Offset(
+        angleSign(start, end)*(25.dp.toPx() * cos(theta)),
+        angleSign(start, end)*(25.dp.toPx() * sin(theta))
+    )
     drawLine(
         color = color,
         strokeWidth = strokeWidth,
-        start = start + Offset(
-            angleSign(start, end)*(25.dp.toPx() * cos(theta)),
-            angleSign(start, end)*(25.dp.toPx() * sin(theta))
-            ),
-        end = end - Offset(
-            angleSign(start, end)*(25.dp.toPx() * cos(theta)),
-            angleSign(start, end)*(25.dp.toPx() * sin(theta))
-        ),
+        start = linePointStart,
+        end = linePointEnd,
+    )
+    // draw a little arrow at the end of the line
+    drawLine(
+        color = color,
+        strokeWidth = strokeWidth,
+        start = linePointEnd,
+        end = linePointEnd + Offset(
+            angleSign(start, end)*(-10.dp.toPx() * cos(theta + 0.5f)),
+            angleSign(start, end)*(-10.dp.toPx() * sin(theta + 0.5f))
+        )
+    )
+    drawLine(
+        color = color,
+        strokeWidth = strokeWidth,
+        start = linePointEnd,
+        end = linePointEnd + Offset(
+            angleSign(start, end)*(-10.dp.toPx() * cos(theta - 0.5f)),
+            angleSign(start, end)*(-10.dp.toPx() * sin(theta - 0.5f))
+        )
     )
     Log.i(
         "DrawLine",
