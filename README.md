@@ -2,7 +2,7 @@
 This project is an Android application developed in Kotlin using Jetpack Compose that simulates graph theory algorithms. The application allows users to draw graphs on a canvas, run different algorithms on them, and visualize the results.
 
 # Architechture
-<img src="https://miro.medium.com/v2/resize:fit:1200/1*ol7iY_f4OiFSxO7qhfGqiw.png" align="left" width="500">
+<img src="https://miro.medium.com/v2/resize:fit:1200/1*ol7iY_f4OiFSxO7qhfGqiw.png" align="left" width="450">
 This application uses the Jetpack Compose Architecture with ViewModel. It is designed to create interactive and reactive applications. The architecture leverages the ViewModel component to manage UI state and handle user interactions. The UIState data class (GraphState) represents the current state of the user interface. The MainActivity contains a composable function defining the UI structure. An event emitter triggers UI events, which are processed by the ViewModel for state updates.
 <br>
 <br>
