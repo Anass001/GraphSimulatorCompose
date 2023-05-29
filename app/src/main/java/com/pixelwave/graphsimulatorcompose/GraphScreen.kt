@@ -93,7 +93,6 @@ fun GraphScreen(viewModel: GraphViewModel = GraphViewModel()) {
                     ExposedDropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
-                        modifier = Modifier.fillMaxWidth()
                     ) {
                         DropdownMenuItem(
                             text = { Text(text = "BFS") },

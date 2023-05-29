@@ -1,5 +1,6 @@
 package com.pixelwave.graphsimulatorcompose
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.PriorityQueue
+import kotlin.math.abs
+import kotlin.math.atan
+import kotlin.math.cos
+import kotlin.math.sin
 
 @Composable
 fun Graph(
@@ -143,6 +148,7 @@ fun Graph(
                         title.value = title.value.plus(" ")
                     }
                 }
+
                 Algorithm.Dfs -> {
                     val coroutineScope = rememberCoroutineScope()
                     selectedNodes.clear()
@@ -180,6 +186,7 @@ fun Graph(
                         }
                     }
                 }
+
                 Algorithm.Dijkstra -> {
                     val coroutineScope = rememberCoroutineScope()
                     selectedNodes.clear()
@@ -256,11 +263,26 @@ fun Graph(
     }
 }
 
+fun angleSign(start: Offset, end: Offset): Float {
+    return if (end.x < start.x && end.y < start.y) -1f else 1f
+}
+
 fun DrawScope.drawLineBetweenNodes(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
+    val theta = atan((end.y - start.y) / (end.x - start.x))
     drawLine(
         color = color,
         strokeWidth = strokeWidth,
-        start = start,
-        end = end
+        start = start + Offset(
+            angleSign(start, end)*(25.dp.toPx() * cos(theta)),
+            angleSign(start, end)*(25.dp.toPx() * sin(theta))
+            ),
+        end = end - Offset(
+            angleSign(start, end)*(25.dp.toPx() * cos(theta)),
+            angleSign(start, end)*(25.dp.toPx() * sin(theta))
+        ),
+    )
+    Log.i(
+        "DrawLine",
+        "start: $start, end: $end, theta: $theta, angleSign: ${angleSign(start, end)}"
     )
 }
