@@ -53,6 +53,8 @@ fun Node(
 ```
 
 ### Connecting two nodes
+<img src="https://github.com/Anass001/GraphSimulatorCompose/blob/master/graph-coordinates.png" align="right" width="300">
+
 ```kotlin
 fun DrawScope.drawLineBetweenNodes(start: Offset, end: Offset, color: Color, strokeWidth: Float) {
     val theta = atan((end.y - start.y) / (end.x - start.x))
