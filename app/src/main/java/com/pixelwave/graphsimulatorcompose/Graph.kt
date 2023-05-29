@@ -283,7 +283,6 @@ fun DrawScope.drawLineBetweenNodes(start: Offset, end: Offset, color: Color, str
         start = linePointStart,
         end = linePointEnd,
     )
-    // draw a little arrow at the end of the line
     drawLine(
         color = color,
         strokeWidth = strokeWidth,
